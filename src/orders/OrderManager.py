@@ -1,7 +1,7 @@
 import pandas as pd
 
-from Constants import TYPE, POSITION_TYPE_LONG, QUANTITY, SYMBOL, PRICE, BUY, STOP_LOSS, OPEN, CLOSED, ENTRY_DATE, \
-    EXIT_DATE, EXIT_PRICE, TX_DATE, TX_PRICE, ENTRY_PRICE, SELL, POSITION_TYPE_SHORT, POSITION_VALUE
+from src.Constants import TYPE, POSITION_TYPE_LONG, QUANTITY, SYMBOL, PRICE, BUY, STOP_LOSS, OPEN, CLOSED, ENTRY_DATE, \
+    EXIT_DATE, EXIT_PRICE, TX_DATE, TX_PRICE, SELL, POSITION_TYPE_SHORT, POSITION_VALUE
 
 orders = []
 position_status = {}
@@ -62,6 +62,8 @@ def buy(symbol, quantity, price, stop_loss, buy_date):
 
     square_off(order, POSITION_TYPE_LONG)
 
+    return order
+
 
 def sell(symbol, quantity, price, stop_loss, sell_date):
     order = {
@@ -76,6 +78,8 @@ def sell(symbol, quantity, price, stop_loss, sell_date):
 
     square_off(order, POSITION_TYPE_SHORT)
 
+    return order
+
 
 def get_all_positions():
     # List to store the transformed data
@@ -87,10 +91,13 @@ def get_all_positions():
             row = {
                 SYMBOL: symbol
             }
-
             row.update(entry)
 
             rows.append(row)
 
     return pd.DataFrame(rows)
+
+
+def get_open_position_for_symbol(symbol):
+    return open_positions[symbol]
 

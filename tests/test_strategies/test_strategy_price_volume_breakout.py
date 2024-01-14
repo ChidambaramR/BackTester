@@ -58,7 +58,7 @@ class PriceVolumeBreakOutTest(unittest.TestCase):
         self.assertEqual(3, (stats[IS_PROFIT] == 1).sum())
         self.assertEqual(3, (stats[IS_LOSS] == 1).sum())
         self.assertEqual(5687.5, (stats[PROFIT] * stats[QUANTITY]).sum())
-        self.assertEqual(1304.99755859375, (stats[LOSS] * stats[QUANTITY]).sum())
+        self.assertEqual(-1304.99755859375, (stats[LOSS] * stats[QUANTITY]).sum())
         self.assertEqual((200000 + 5687.5 - 1304.99755859375), OrderManager.available_cash)
 
         actual_open_positions = OrderManager.get_all_positions()
@@ -73,5 +73,6 @@ class PriceVolumeBreakOutTest(unittest.TestCase):
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
 
 

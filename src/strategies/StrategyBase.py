@@ -2,6 +2,8 @@ import logging
 import sys
 
 import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
 
 import src.orders.OrderManager as orders
 from src.Constants import QUANTITY, STOP_LOSS, PRICE, CLOSE, TX_DATE, EXIT_PRICE, IS_PROFIT, IS_LOSS, \
@@ -131,8 +133,8 @@ class Strategy:
                         PROFIT_PCT: 0,
                         PROFIT: 0,
                         IS_LOSS: 1,
-                        LOSS_PCT: change_pct,
-                        LOSS: change
+                        LOSS_PCT: change_pct * -1,
+                        LOSS: change * -1
                     })
 
                     continue
@@ -156,3 +158,23 @@ class Strategy:
 
     def get_stats(self):
         return pd.DataFrame(self.stats)
+
+    def print_stats(self):
+        stats = self.get_stats()
+        stats['trades'] = stats['profit_pct']
+        stats.loc[stats['profit_pct'] == 0, 'trades'] = stats['loss_pct']
+
+        win_rate = round((stats['is_profit'].sum() / len(stats['is_profit'])) * 100, 2)
+        loss_rate = round((stats['is_loss'].sum() / len(stats['is_loss'])) * 100, 2)
+        avg_profit_pct = round(stats.loc[stats['is_profit'] == 1, 'profit_pct'].mean(), 2)
+        avg_loss_pct = round(stats.loc[stats['is_loss'] == 1, 'loss_pct'].mean(), 2)
+
+        sns.histplot(pd.Series(stats['trades']), bins=20)
+        plt.title(f"Distribution of Breakout Profits for {self.symbol.upper()}")
+        plt.text(0.95, 0.95,
+                 f"Total Breakouts: {len(stats)} \n Avg profit: {avg_profit_pct}% \n Avg loss: {avg_loss_pct}% \n Win "
+                 f"Rate: {win_rate}% \n Loss Rate: {loss_rate}%",
+                 ha='right', va='top', transform=plt.gca().transAxes)
+        plt.ylabel('Number of Breakouts')
+        plt.xlabel('Profit (%)')
+        plt.show()

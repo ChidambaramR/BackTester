@@ -41,8 +41,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": 3000,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 23000,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 23000
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -71,8 +70,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": 9000,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 25000,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 25000
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -101,8 +99,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -19000,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -131,8 +128,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -44000,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -160,8 +156,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -60,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 19940,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 19940
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -190,8 +185,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -1120,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 19940,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 19940
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -220,8 +214,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -44000,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -250,8 +243,7 @@ class StrategyTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -24010,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)

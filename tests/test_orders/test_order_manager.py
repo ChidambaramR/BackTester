@@ -28,8 +28,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -20000,
                 "EXIT_DATE": None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -46,8 +45,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -29500,
                 "EXIT_DATE": None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -64,8 +62,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -1000,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 19000,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 19000
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -83,8 +80,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date + timedelta(hours=2),
                 "POSITION_VALUE": -10500,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -103,8 +99,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date + timedelta(hours=2),
                 "POSITION_VALUE": 500,
                 "EXIT_DATE":  self.entry_date + timedelta(hours=3),
-                "EXIT_PRICE": 11000,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 11000
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
@@ -122,8 +117,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -1000,
                 "EXIT_DATE": self.entry_date + timedelta(hours=1),
-                "EXIT_PRICE": 19000,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 19000
             },
             {
                 "SYMBOL": "SBIN",
@@ -131,8 +125,7 @@ class OrderManagerTest(unittest.TestCase):
                 "ENTRY_DATE": self.entry_date,
                 "POSITION_VALUE": -20000,
                 "EXIT_DATE":  None,
-                "EXIT_PRICE": 0,
-                "TYPE": "LONG"
+                "EXIT_PRICE": 0
             }
         ])
         assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)

@@ -18,6 +18,252 @@ class StrategyTest(unittest.TestCase):
         OrderManager.open_positions = {}
         OrderManager.position_status = {}
 
+    def test_exit_short_position_when_target_profit_reached(self):
+        order = OrderManager.sell("TCS", 10, 2000, 2005, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 10
+        s.open_short_positions = [order]
+
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertTrue(len(s.open_short_positions) == 1)
+
+        s.exit_short_positions_if_target_attained(self.entry_date + timedelta(hours=1), 1799)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertTrue(len(s.open_short_positions) == 0)
+        self.assertIs("CLOSED", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": 0,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 2010,
+                "EXIT_DATE":  self.entry_date + timedelta(hours=1),
+                "EXIT_PRICE": 17990
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_all_short_positions_when_target_profit_reached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2200, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2100, 2200, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 10
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_target_attained(self.entry_date + timedelta(hours=1), 1799)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertTrue(len(s.open_short_positions) == 0)
+        self.assertIs("CLOSED", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": 0,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 5020,
+                "EXIT_DATE":  self.entry_date + timedelta(hours=1),
+                "EXIT_PRICE": 17990
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_one_short_position_when_target_profit_reached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2500, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2400, 2500, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 10
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_target_attained(self.entry_date + timedelta(hours=1), 1900)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 1)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": -10,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 25000,
+                "EXIT_DATE":  None,
+                "EXIT_PRICE": 0
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_no_short_position_when_target_profit_not_reached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2100, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2400, 2500, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 50
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": -20,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 44000,
+                "EXIT_DATE":  None,
+                "EXIT_PRICE": 0
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_short_position_when_stop_loss_breached(self):
+        order = OrderManager.sell("TCS", 10, 2000, 2100, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 1
+        s.open_short_positions = [order]
+
+        self.assertTrue(len(s.open_short_positions) == 1)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 2101)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 0)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("CLOSED", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": 0,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": -1010,
+                "EXIT_DATE":  self.entry_date + timedelta(hours=1),
+                "EXIT_PRICE": 21010
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_all_short_positions_when_stop_loss_breached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2200, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2100, 2200, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 10
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 2201)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 0)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("CLOSED", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": 0,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": -3020,
+                "EXIT_DATE":  self.entry_date + timedelta(hours=1),
+                "EXIT_PRICE": 22010
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_no_short_position_when_stop_loss_not_reached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2200, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2400, 2200, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 50
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 2199)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": -20,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 44000,
+                "EXIT_DATE":  None,
+                "EXIT_PRICE": 0
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
+    def test_exit_one_short_position_when_stop_loss_breached(self):
+        order1 = OrderManager.sell("TCS", 10, 2000, 2100, self.entry_date)
+        order2 = OrderManager.sell("TCS", 10, 2400, 2500, self.entry_date)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        s = Strategy(symbol="TCS")
+        s.target_profit_pct = 10
+        s.open_short_positions = [order1, order2]
+
+        self.assertTrue(len(s.open_short_positions) == 2)
+        self.assertTrue(len(s.open_long_positions) == 0)
+
+        s.exit_short_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 2101)
+        actual_open_positions = OrderManager.get_all_positions()
+
+        self.assertTrue(len(s.open_short_positions) == 1)
+        self.assertTrue(len(s.open_long_positions) == 0)
+        self.assertIs("open", OrderManager.position_status["TCS"])
+
+        expected_open_positions = pd.DataFrame([
+            {
+                "SYMBOL": "TCS",
+                "QUANTITY": -10,
+                "ENTRY_DATE": self.entry_date,
+                "POSITION_VALUE": 22990,
+                "EXIT_DATE":  None,
+                "EXIT_PRICE": 0
+            }
+        ])
+        assert_frame_equal(actual_open_positions, expected_open_positions, check_dtype=False)
+
     def test_exit_long_position_when_target_profit_reached(self):
         order = OrderManager.buy("TCS", 10, 2000, 1995, self.entry_date)
         self.assertIs("open", OrderManager.position_status["TCS"])
@@ -28,7 +274,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 1)
 
-        s.exit_long_position_if_target_attained(self.entry_date + timedelta(hours=1), 2300)
+        s.exit_long_positions_if_target_attained(self.entry_date + timedelta(hours=1), 2300)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 0)
@@ -57,7 +303,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
+        s.exit_long_positions_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 0)
@@ -86,7 +332,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
+        s.exit_long_positions_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 1)
@@ -115,7 +361,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
+        s.exit_long_positions_if_target_attained(self.entry_date + timedelta(hours=1), 2500)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 2)
@@ -143,7 +389,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 1)
 
-        s.exit_long_position_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1994)
+        s.exit_long_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1994)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 0)
@@ -172,7 +418,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1994)
+        s.exit_long_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1994)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 0)
@@ -201,7 +447,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1996)
+        s.exit_long_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1996)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 2)
@@ -230,7 +476,7 @@ class StrategyTest(unittest.TestCase):
 
         self.assertTrue(len(s.open_long_positions) == 2)
 
-        s.exit_long_position_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1999)
+        s.exit_long_positions_if_stop_loss_breached(self.entry_date + timedelta(hours=1), 1999)
         actual_open_positions = OrderManager.get_all_positions()
 
         self.assertTrue(len(s.open_long_positions) == 1)

@@ -104,7 +104,7 @@ def take_new_short_position(order):
     position_status[symbol] = OPEN
 
     new_position = {
-        QUANTITY: order[QUANTITY],
+        QUANTITY: order[QUANTITY] * -1,
         ENTRY_DATE: order[TX_DATE],
         POSITION_VALUE: order[TX_PRICE],
         EXIT_DATE: None,

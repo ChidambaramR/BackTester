@@ -7,12 +7,12 @@ from pandas._testing import assert_frame_equal
 
 from src.Constants import IS_PROFIT, IS_LOSS, PROFIT, LOSS, QUANTITY
 from src.orders import OrderManager
-from src.strategies.PriceVolumeBreakoutStrategy import PriceVolumeBreakout
+from strategies.MACDBreakoutStrategy import MACDBreakout
 
 
 class PriceVolumeBreakOutTest(unittest.TestCase):
     df = pd.DataFrame()
-    strategy = PriceVolumeBreakout("TCS")
+    strategy = MACDBreakout("TCS")
 
     strategy.set_target_profit_pct(5, 2)
 

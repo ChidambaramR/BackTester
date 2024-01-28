@@ -43,15 +43,19 @@ class Strategy:
         current_time = df.index[-1]
         current_close_price = df[CLOSE].iloc[-1]
 
-        self.exit_long_position_if_target_attained(current_time, current_close_price)
+        self.exit_long_positions_if_target_attained(current_time, current_close_price)
 
-        self.exit_long_position_if_stop_loss_breached(current_time, current_close_price)
+        self.exit_long_positions_if_stop_loss_breached(current_time, current_close_price)
 
     def set_target_profit_pct(self, profit_pct, risk_reward_ratio):
         self.target_profit_pct = profit_pct
         self.target_stop_loss_pct = profit_pct / risk_reward_ratio
 
-    def square_off_all_open_long_positions_at_a_profit(self, df):
+    def square_off_all_open_long_positions(self, df):
+        self.square_off_all_open_positions_at_a_profit(df)
+        self.square_off_all_open_long_positions_at_a_loss(df)
+
+    def square_off_all_open_positions_at_a_profit(self, df):
         current_time = df.index[-1]
         current_close_price = df[CLOSE].iloc[-1]
 
@@ -59,7 +63,8 @@ class Strategy:
 
         old_target_pct = self.target_profit_pct
         self.target_profit_pct = 0
-        self.exit_long_position_if_target_attained(current_time, current_close_price)
+        self.exit_long_positions_if_target_attained(current_time, current_close_price)
+        self.exit_short_positions_if_target_attained(current_time, current_close_price)
 
         # Restore things
         self.target_profit_pct = old_target_pct
@@ -74,9 +79,9 @@ class Strategy:
         self.open_long_positions = \
             [{k: sys.maxsize if k == STOP_LOSS else v for k, v in entry.items()} for entry in open_positions_bkup]
 
-        self.exit_long_position_if_stop_loss_breached(current_time, current_close_price)
+        self.exit_long_positions_if_stop_loss_breached(current_time, current_close_price)
 
-    def exit_long_position_if_target_attained(self, current_time, current_close_price):
+    def exit_long_positions_if_target_attained(self, current_time, current_close_price):
         open_positions_new = []
 
         if self.open_long_positions:
@@ -109,7 +114,40 @@ class Strategy:
 
         self.open_long_positions = open_positions_new
 
-    def exit_long_position_if_stop_loss_breached(self, current_time, current_close_price):
+    def exit_short_positions_if_target_attained(self, current_time, current_close_price):
+        open_positions_new = []
+
+        if self.open_short_positions:
+            for open_short_position in self.open_short_positions:
+                entry_price = open_short_position[PRICE]
+                change_pct = get_change_pct(entry_price, current_close_price)
+                change = get_change(entry_price, current_close_price)
+
+                if change_pct >= self.target_profit_pct:
+                    logging.info("Target profit percent for short position attained at {}".format(str(current_time)))
+                    self.do_exit_short_position(open_short_position, current_time, current_close_price)
+
+                    self.stats.append({
+                        TX_DATE: open_short_position[TX_DATE],
+                        EXIT_DATE: current_time,
+                        ENTRY_PRICE: entry_price,
+                        EXIT_PRICE: current_close_price,
+                        QUANTITY: open_short_position[QUANTITY],
+                        IS_PROFIT: 1,
+                        PROFIT_PCT: change_pct,
+                        PROFIT: change,
+                        IS_LOSS: 0,
+                        LOSS_PCT: 0,
+                        LOSS: 0
+                    })
+
+                    continue
+
+                open_positions_new.append(open_short_position)
+
+        self.open_short_positions = open_positions_new
+
+    def exit_long_positions_if_stop_loss_breached(self, current_time, current_close_price):
         open_positions_new = []
 
         if self.open_long_positions:
@@ -143,6 +181,40 @@ class Strategy:
 
         self.open_long_positions = open_positions_new
 
+    def exit_short_positions_if_stop_loss_breached(self, current_time, current_close_price):
+        open_positions_new = []
+
+        if self.open_short_positions:
+            for open_short_position in self.open_short_positions:
+                stop_loss_price = open_short_position[STOP_LOSS]
+                entry_price = open_short_position[PRICE]
+                change_pct = get_change_pct(current_close_price, entry_price)
+                change = get_change(current_close_price, entry_price)
+
+                if current_close_price > stop_loss_price:
+                    logging.info("Stop loss breached for short position at {}".format(str(current_time)))
+                    self.do_exit_short_position(open_short_position, current_time, current_close_price)
+
+                    self.stats.append({
+                        TX_DATE: open_short_position[TX_DATE],
+                        EXIT_DATE: current_time,
+                        ENTRY_PRICE: entry_price,
+                        EXIT_PRICE: current_close_price,
+                        QUANTITY: open_short_position[QUANTITY],
+                        IS_PROFIT: 0,
+                        PROFIT_PCT: 0,
+                        PROFIT: 0,
+                        IS_LOSS: 1,
+                        LOSS_PCT: change_pct * -1,
+                        LOSS: change * -1
+                    })
+
+                    continue
+
+                open_positions_new.append(open_short_position)
+
+        self.open_short_positions = open_positions_new
+
     def do_exit_long_position(self, long_position, current_time, current_close_price):
         if not long_position:
             raise ValueError("No open long position to exit")
@@ -152,9 +224,22 @@ class Strategy:
 
         orders.sell(self.symbol, long_position[QUANTITY], current_close_price, 0, current_time)
 
+    def do_exit_short_position(self, short_position, current_time, current_close_price):
+        if not short_position:
+            raise ValueError("No open short position to exit")
+
+        logging.info("Exiting short position for symbol {} on {} at price {}. Entry price {}".format(
+            self.symbol, current_time, current_close_price, short_position[PRICE]))
+
+        orders.buy(self.symbol, short_position[QUANTITY], current_close_price, 0, current_time)
+
     def enter_long_position(self, quantity, current_time, current_close_price, stop_loss=0):
         logging.info("Entering long position for symbol {} at {}".format(self.symbol, current_time))
         self.open_long_positions.append(orders.buy(self.symbol, quantity, current_close_price, stop_loss, current_time))
+
+    def enter_short_position(self, quantity, current_time, current_close_price, stop_loss=0):
+        logging.info("Entering short position for symbol {} at {}".format(self.symbol, current_time))
+        self.open_short_positions.append(orders.sell(self.symbol, quantity, current_close_price, stop_loss, current_time))
 
     def get_stats(self):
         return pd.DataFrame(self.stats)

@@ -4,7 +4,9 @@ from datetime import date
 
 import pandas as pd
 from pandas._testing import assert_frame_equal
+from ta import add_all_ta_features
 
+from data.candles.CandleStickPatterns import recognize_candlestick
 from src.Constants import IS_PROFIT, IS_LOSS, PROFIT, LOSS, QUANTITY
 from src.orders import OrderManager
 from src.strategies.PriceVolumeBreakoutStrategy import PriceVolumeBreakout
@@ -32,6 +34,8 @@ class PriceVolumeBreakOutTest(unittest.TestCase):
         self.df = pd.read_excel(file_path, index_col=0)
         self.df = self.df[['open', 'high', 'low', 'close', 'adjclose', 'volume']]
         self.df.index = self.df.index.date
+        self.df = add_all_ta_features(self.df, 'open', 'high', 'low', 'close', 'volume')
+        self.df = recognize_candlestick(self.df)
 
         OrderManager.open_positions = {}
         OrderManager.position_status = {}
